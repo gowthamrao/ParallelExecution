@@ -1,0 +1,38 @@
+Package: ParallelExecution
+Type: Package
+Title: An R package to run queries in parallel.
+Version: 0.0.1
+Date: 2024-09-16
+Authors@R: c(
+    person("Gowtham", "Rao", email = "rao@ohdsi.org", role = c("aut", "cre")),
+    person("Observational Health Data Science and Informatics", role = c("cph"))
+  )
+Maintainer: Gowtham Rao <rao@ohdsi.org>
+Description: An R package to run queries in parallel.
+Depends:
+	DatabaseConnector (>= 5.0.0),
+	R (>= 4.1.0)
+Imports:
+    checkmate,
+    dplyr,
+    lifecycle,
+    ParallelLogger,
+    SqlRender
+Suggests:
+  Eunomia,
+  remotes,
+  rmarkdown,
+  knitr,
+	testthat,
+	withr
+Remotes:
+  ohdsi/Eunomia,
+  ohdsi/ParallelLogger
+License: Apache License
+RoxygenNote: 7.3.2
+VignetteBuilder: knitr
+Roxygen: list(markdown = TRUE)
+Encoding: UTF-8
+Language: en-US
+URL: https://ohdsi.github.io/ParallelExecution/, https://github.com/OHDSI/ParallelExecution
+BugReports: https://github.com/OHDSI/ParallelExecution/issues
