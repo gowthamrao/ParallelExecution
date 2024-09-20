@@ -21,11 +21,12 @@ renderTranslateExecuteSqlInParallel <- function(cdmSources,
                                                 userService = "OHDSI_USER",
                                                 passwordService = "OHDSI_PASSWORD",
                                                 ...) {
-
   cdmSources <-
-    getCdmSource(cdmSources = cdmSources,
-                 database = databaseIds,
-                 sequence = sequence)
+    getCdmSource(
+      cdmSources = cdmSources,
+      database = databaseIds,
+      sequence = sequence
+    )
 
   # Convert the filtered cdmSources to a list for parallel processing
   x <- list()
@@ -43,7 +44,7 @@ renderTranslateExecuteSqlInParallel <- function(cdmSources,
     function(x, sql, tempEmulationSchema, ...) {
       # Create connection details for each CDM source
       connectionDetails <- createConnectionDetails(cdmSources = x, database = x$database)
-      
+
       connection <-
         DatabaseConnector::connect(connectionDetails = connectionDetails)
 

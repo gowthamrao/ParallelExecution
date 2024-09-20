@@ -7,12 +7,12 @@
 #' @return A list containing the connection details.
 #' @export
 createConnectionDetails <- function(keyringName = Sys.getenv("keyringName")) {
-  connectionDetails = DatabaseConnector::createConnectionDetails(
+  connectionDetails <- DatabaseConnector::createConnectionDetails(
     dbms = "spark",
     connectionString = keyring::key_get("dataBricksConnectionString", keyring = keyringName),
     user = keyring::key_get("dataBricksUserName", keyring = keyringName),
     password = keyring::key_get("dataBricksPassword", keyring = keyringName)
   )
-  
+
   return(connectionDetails)
 }

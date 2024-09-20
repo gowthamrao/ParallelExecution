@@ -17,12 +17,12 @@
 #'       getCdmSource(cdmSources = cdmSources,
 #'                    database = databaseIds,
 #'                    sequence = sequence)
-#'     
+#'
 #'     x <- list()
 #'     for (i in 1:nrow(cdmSources)) {
 #'       x[[i]] <- cdmSources[i,]
 #'     }
-#'     
+#'
 #'     # use Parallel Logger to run in parallel
 #'     cluster <-
 #'       ParallelLogger::makeCluster(numberOfThreads = min(as.integer(trunc(
@@ -30,8 +30,8 @@
 #'           2
 #'       )),
 #'       length(x)))
-#'     
-#'     
+#'
+#'
 #'     getPlpDataX <- function(x,
 #'                             targetCohortTableName,
 #'                             outcomeCohortTableName,
@@ -40,7 +40,7 @@
 #'                             studyStartDate,
 #'                             studyEndDate,
 #'                             firstExposureOnly,
-#'                             
+#'
 #'                             tempEmulationSchema) {
 #'       connectionDetails <- DatabaseConnector::createConnectionDetails(
 #'         dbms = x$dbms,
@@ -49,7 +49,7 @@
 #'         server = x$serverFinal,
 #'         port = x$port
 #'       )
-#'       
+#'
 #'       databaseDetails <-
 #'         PatientLevelPrediction::createDatabaseDetails(
 #'           connectionDetails = connectionDetails,
@@ -65,7 +65,7 @@
 #'           cdmVersion = 5,
 #'           tempEmulationSchema = tempEmulationSchema
 #'         )
-#'       
+#'
 #'       restrictPlpDataSettings <-
 #'         PatientLevelPrediction::createRestrictPlpDataSettings(
 #'           studyStartDate = studyStartDate,
@@ -74,7 +74,7 @@
 #'           washoutPeriod = washoutPeriod
 #'         )
 #'     }
-#'     
+#'
 #'     ParallelLogger::clusterApply(
 #'       cluster = cluster,
 #'       x = x,
@@ -84,6 +84,6 @@
 #'       fun = executeCohortExplorerX,
 #'       stopOnError = FALSE
 #'     )
-#'     
+#'
 #'     ParallelLogger::stopCluster(cluster = cluster)
 #'   }

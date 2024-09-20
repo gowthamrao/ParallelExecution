@@ -7,18 +7,20 @@ getCohortSummaryStatsInParallel <- function(cdmSources = NULL,
   if (is.null(cohortTableNames$cohortSummaryStats)) {
     stop("'cohortSummaryStats' not found in cohortTableNames")
   }
-  
+
   cdmSources <-
-    getCdmSource(cdmSources = cdmSources,
-                 database = databaseIds,
-                 sequence = sequence)
-  
+    getCdmSource(
+      cdmSources = cdmSources,
+      database = databaseIds,
+      sequence = sequence
+    )
+
   if (!is.null(cohortIds)) {
     sql <- "
         SELECT  *
         FROM @cohort_database_schema.@cohort_table_name
         WHERE cohort_definition_id IN (@cohort_ids);"
-    
+
     output <-
       OhdsiHelpers::renderTranslateQuerySqlInParallel(
         cdmSources = cdmSources,
@@ -31,7 +33,7 @@ getCohortSummaryStatsInParallel <- function(cdmSources = NULL,
     sql <- "
         SELECT  *
         FROM @cohort_database_schema.@cohort_table_name;"
-    
+
     output <-
       OhdsiHelpers::renderTranslateQuerySqlInParallel(
         cdmSources = cdmSources,
@@ -40,6 +42,6 @@ getCohortSummaryStatsInParallel <- function(cdmSources = NULL,
         databaseIds = databaseIds
       )
   }
-  
+
   return(output)
 }

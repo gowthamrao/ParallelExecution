@@ -21,11 +21,12 @@ renderTranslateQuerySqlInParallel <- function(cdmSources,
                                               userService = "OHDSI_USER",
                                               passwordService = "OHDSI_PASSWORD",
                                               ...) {
-  
   cdmSources <-
-    getCdmSource(cdmSources = cdmSources,
-                 database = databaseIds,
-                 sequence = sequence)
+    getCdmSource(
+      cdmSources = cdmSources,
+      database = databaseIds,
+      sequence = sequence
+    )
 
   # Convert the filtered cdmSources to a list for parallel processing
   x <- list()

@@ -47,15 +47,15 @@ executeFeatureExtraction <-
     if (!file.exists(outputFolder)) {
       dir.create(outputFolder, recursive = TRUE)
     }
-    
+
     if (!aggregated) {
       if (length(cohortIds) > 1) {
         stop("only one cohort id allowed when doing aggregated = FALSE")
       }
     }
-    
+
     cohortBasedTemporalCovariateSettings <- NULL
-    
+
     if (addCohortBasedTemporalCovariateSettings) {
       if (!is.null(covariateSettings)) {
         timeWindows <-
@@ -63,7 +63,7 @@ executeFeatureExtraction <-
       } else {
         timeWindows <- getFeatureExtractionDefaultTimeWindows()
       }
-      
+
       if (is.null(covariateCohortDefinitionSet)) {
         stop(
           "covariateCohortDefinitionSet is NULL. cannot run cohort temporal characterization"
@@ -82,7 +82,7 @@ executeFeatureExtraction <-
           "cohortCovariateAnalysisId is NULL. cannot run cohort temporal characterization"
         )
       }
-      
+
       covariateCohortDefinitionSet <-
         covariateCohortDefinitionSet |>
         dplyr::mutate(
@@ -91,16 +91,18 @@ executeFeatureExtraction <-
             cohortCovariateAnalysisId = cohortCovariateAnalysisId
           )
         )
-      
-      if (any(!is.null(includeCovariateIds),
-              length(includeCovariateIds) > 0)) {
+
+      if (any(
+        !is.null(includeCovariateIds),
+        length(includeCovariateIds) > 0
+      )) {
         covariateCohortDefinitionSet <- covariateCohortDefinitionSet |>
           dplyr::filter(.data$covariateId %in% c(includeCovariateIds))
       }
-      
+
       includeCovariateIds <-
         covariateCohortDefinitionSet$covariateId
-      
+
       cohortBasedTemporalCovariateSettings <-
         getFeatureExtractionDefaultTemporalCohortCovariateSettings(
           timeWindows = getCovariateSettingsTimeWindows(covariateSettings = covariateSettings),
@@ -108,18 +110,20 @@ executeFeatureExtraction <-
           covariateCohortDatabaseSchema = covariateCohortDatabaseSchema,
           covariateCohortTable = covariateCohortTable,
           covariateCohortDefinitionSet = covariateCohortDefinitionSet,
-          valueType = 'binary',
+          valueType = "binary",
           includedCovariateIds = includeCovariateIds
         )
     }
-    
+
     if (is.null(covariateSettings)) {
       covariateSettings <- cohortBasedTemporalCovariateSettings
     } else {
-      covariateSettings <- list(covariateSettings,
-                                cohortBasedTemporalCovariateSettings)
+      covariateSettings <- list(
+        covariateSettings,
+        cohortBasedTemporalCovariateSettings
+      )
     }
-    
+
     if (!is.null(outputFolder)) {
       ParallelLogger::addDefaultFileLogger(file.path(outputFolder, "log.txt"))
       ParallelLogger::addDefaultErrorReportLogger(file.path(outputFolder, "errorReportR.txt"))
@@ -129,12 +133,12 @@ executeFeatureExtraction <-
         add = TRUE
       )
     }
-    
+
     if (is.null(connection)) {
       connection <- DatabaseConnector::connect(connectionDetails)
       on.exit(DatabaseConnector::disconnect(connection))
     }
-    
+
     useRowId <- (rowIdField == "row_id")
     if (useRowId) {
       sql <- "
@@ -163,20 +167,20 @@ executeFeatureExtraction <-
       cohortDatabaseSchema <- NULL
       cohortTable <- "#cohort_person"
     }
-    
+
     ParallelLogger::logInfo(" - Beginning Feature Extraction")
-    
+
     for (x in (1:length(cohortIds))) {
       cohortId <- cohortIds[[x]]
       ParallelLogger::logInfo(paste0("   - cohort id: ", cohortId))
-      
+
       skipCohort <- FALSE
       if (incremental) {
         if (file.exists(file.path(outputFolder, cohortId))) {
           skipCohort <- TRUE
         }
       }
-      
+
       if (!skipCohort) {
         covariateData <-
           FeatureExtraction::getDbCovariateData(
@@ -192,19 +196,21 @@ executeFeatureExtraction <-
             cohortTableIsTemp = is.null(cohortDatabaseSchema),
             rowIdField = rowIdField
           )
-        
+
         dir.create(
           path = file.path(outputFolder),
           showWarnings = FALSE,
           recursive = TRUE
         )
-        FeatureExtraction::saveCovariateData(covariateData = covariateData,
-                                             file = file.path(outputFolder, cohortId))
+        FeatureExtraction::saveCovariateData(
+          covariateData = covariateData,
+          file = file.path(outputFolder, cohortId)
+        )
       } else {
         ParallelLogger::logInfo(paste0("    - skipping cohort id: ", cohortId))
       }
     }
-    
+
     if (useRowId) {
       sql <- "DROP TABLE  IF EXISTS #cohort_person;"
       DatabaseConnector::renderTranslateExecuteSql(
@@ -242,28 +248,34 @@ executeFeatureExtractionInParallel <-
            aggregated = TRUE,
            incremental = TRUE) {
     cdmSources <-
-      getCdmSource(cdmSources = cdmSources,
-                   database = databaseIds,
-                   sequence = sequence)
-    
+      getCdmSource(
+        cdmSources = cdmSources,
+        database = databaseIds,
+        sequence = sequence
+      )
+
     if (nrow(cdmSources) == 0) {
       writeLines("cdmSources filtered to databaseIds is emtpy.")
     }
-    
+
     x <- list()
     for (i in 1:nrow(cdmSources)) {
-      x[[i]] <- cdmSources[i,]
+      x[[i]] <- cdmSources[i, ]
     }
-    
+
     # use Parallel Logger to run in parallel
     cluster <-
-      ParallelLogger::makeCluster(numberOfThreads = min(as.integer(trunc(
-        parallel::detectCores() /
-          2
-      )),
-      nrow(cdmSources)),
-      maxCores)
-    
+      ParallelLogger::makeCluster(
+        numberOfThreads = min(
+          as.integer(trunc(
+            parallel::detectCores() /
+              2
+          )),
+          nrow(cdmSources)
+        ),
+        maxCores
+      )
+
     ## file logger
     loggerName <-
       paste0(
@@ -274,9 +286,9 @@ executeFeatureExtractionInParallel <-
           replacement = ""
         )
       )
-    
+
     ParallelLogger::addDefaultFileLogger(fileName = file.path(outputFolder, paste0(loggerName, ".txt")))
-    
+
     executeFeatureExtractionX <-
       function(x,
                cohortIds,
@@ -294,16 +306,17 @@ executeFeatureExtractionInParallel <-
                rowIdField,
                aggregated,
                incremental) {
-        
         connectionDetails <- createConnectionDetails(cdmSources = x, database = x$database)
-        
+
         outputFolder <-
           file.path(outputFolder, x$sourceKey)
-        
+
         includeCovariateIds <-
-          OhdsiHelpers::convertCohortIdToCovariateId(cohortIds = covariateCohortIds,
-                                                     cohortCovariateAnalysisId = cohortCovariateAnalysisId)
-        
+          OhdsiHelpers::convertCohortIdToCovariateId(
+            cohortIds = covariateCohortIds,
+            cohortCovariateAnalysisId = cohortCovariateAnalysisId
+          )
+
         for (i in (1:length(cohortIds))) {
           cohortId <- cohortIds[[i]]
           executeFeatureExtraction(
@@ -326,7 +339,7 @@ executeFeatureExtractionInParallel <-
           )
         }
       }
-    
+
     ParallelLogger::clusterApply(
       cluster = cluster,
       x = x,
@@ -347,6 +360,6 @@ executeFeatureExtractionInParallel <-
       aggregated = aggregated,
       incremental = incremental
     )
-    
+
     ParallelLogger::stopCluster(cluster = cluster)
   }

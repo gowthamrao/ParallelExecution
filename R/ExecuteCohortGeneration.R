@@ -61,9 +61,9 @@ executeCohortGeneration <- function(connectionDetails,
   )
 
   ParallelLogger::logInfo("Creating cohorts")
-  
+
   connection <- DatabaseConnector::connect(connectionDetails = connectionDetails)
-  
+
   DatabaseConnector::dropEmulatedTempTables(connection = connection)
 
   # Next create the tables on the database
@@ -119,16 +119,16 @@ executeCohortGeneration <- function(connectionDetails,
     cohortIds = cohortDefinitionSet$cohortId,
     databaseId = databaseId
   )
-  
+
   dropTempTablesFromScratchDataBricks(
     connection = connection,
     schema = "scratch.scratch_grao9",
     string = "epi",
     exclude = TRUE
   )
-  
+
   DatabaseConnector::disconnect(connection)
-  
+
   readr::write_excel_csv(
     x = cohortCount |>
       dplyr::select(
@@ -177,26 +177,27 @@ executeCohortGenerationInParallel <- function(cdmSources,
                                               createCohortTableIncremental = TRUE,
                                               generateCohortIncremental = TRUE,
                                               cohortIds = NULL) {
-  
   dir.create(path = outputFolder, showWarnings = FALSE, recursive = TRUE)
-  
+
   cdmSources <-
-    getCdmSource(cdmSources = cdmSources,
-                 database = databaseIds,
-                 sequence = sequence)
-  
+    getCdmSource(
+      cdmSources = cdmSources,
+      database = databaseIds,
+      sequence = sequence
+    )
+
   x <- list()
   for (i in 1:nrow(cdmSources)) {
     x[[i]] <- cdmSources[i, ]
   }
-  
+
   # use Parallel Logger to run in parallel
   cluster <-
     ParallelLogger::makeCluster(numberOfThreads = min(as.integer(trunc(
       parallel::detectCores() /
         2
     )), length(x)))
-  
+
   ## file logger
   loggerName <-
     paste0(
@@ -207,9 +208,9 @@ executeCohortGenerationInParallel <- function(cdmSources,
         replacement = ""
       )
     )
-  
+
   ParallelLogger::addDefaultFileLogger(fileName = file.path(outputFolder, paste0(loggerName, ".txt")))
-  
+
   executeCohortGenerationX <- function(x,
                                        cohortDefinitionSet,
                                        cohortIds,
@@ -218,14 +219,16 @@ executeCohortGenerationInParallel <- function(cdmSources,
                                        tempEmulationSchema,
                                        createCohortTableIncremental,
                                        generateCohortIncremental) {
-    connectionDetails = createConnectionDetails()
-    
-    cohortTableName <- paste0(cohortTableBaseName,
-                              "_",
-                              stringr::str_squish(x$sourceKey))
+    connectionDetails <- createConnectionDetails()
+
+    cohortTableName <- paste0(
+      cohortTableBaseName,
+      "_",
+      stringr::str_squish(x$sourceKey)
+    )
     cohortTableNames <-
       CohortGenerator::getCohortTableNames(cohortTable = cohortTableName)
-    
+
     executeCohortGeneration(
       connectionDetails = connectionDetails,
       cohortDefinitionSet = cohortDefinitionSet,
@@ -240,7 +243,7 @@ executeCohortGenerationInParallel <- function(cdmSources,
       generateCohortIncremental = generateCohortIncremental
     )
   }
-  
+
   ParallelLogger::clusterApply(
     cluster = cluster,
     x = x,
@@ -253,7 +256,7 @@ executeCohortGenerationInParallel <- function(cdmSources,
     generateCohortIncremental = generateCohortIncremental,
     fun = executeCohortGenerationX
   )
-  
+
   ParallelLogger::stopCluster(cluster = cluster)
   ParallelLogger::clearLoggers()
 }

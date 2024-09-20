@@ -2,7 +2,7 @@
 
 export(createConnectionDetails)
 export(dropCohortTablesInParallel)
-export(dropTempTablesFromScratchDataBricks)
+export(dropTablesThatStartWithString)
 export(executeCohortDiagnosticsInParallel)
 export(executeCohortExplorerInParallel)
 export(executeCohortGeneration)

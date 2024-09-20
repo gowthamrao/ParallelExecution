@@ -10,11 +10,12 @@ executeConceptRecordCountInParallel <-
            sequence = 1,
            minCellCount = 0,
            domainTableName = NULL) {
-
     cdmSources <-
-      getCdmSource(cdmSources = cdmSources,
-                   database = databaseIds,
-                   sequence = sequence)
+      getCdmSource(
+        cdmSources = cdmSources,
+        database = databaseIds,
+        sequence = sequence
+      )
 
     x <- list()
     for (i in 1:nrow(cdmSources)) {

@@ -5,14 +5,16 @@ dropTablesThatStartWithString <- function(connectionDetails = NULL,
                                           string,
                                           exclude = TRUE) {
   cdmSources <-
-    getCdmSource(cdmSources = cdmSources,
-                 database = databaseIds,
-                 sequence = sequence)
-  
+    getCdmSource(
+      cdmSources = cdmSources,
+      database = databaseIds,
+      sequence = sequence
+    )
+
   if (nrow(cdmSources) == 0) {
     stop("no eligible cdm data source")
   }
-  
+
   # Set up connection to server ----------------------------------------------------
   if (is.null(connection)) {
     if (!is.null(connectionDetails)) {
@@ -22,17 +24,17 @@ dropTablesThatStartWithString <- function(connectionDetails = NULL,
       stop("No connection or connectionDetails provided.")
     }
   }
-  
+
   # Get the list of tables
   listOfTables <- DatabaseConnector::getTableNames(connection = connection, databaseSchema = schema) |> tolower()
-  
+
   # Filter tables that start with the given string
   filteredTables <- if (exclude) {
     listOfTables[!stringr::str_starts(listOfTables, tolower(string))]
   } else {
     listOfTables[stringr::str_starts(listOfTables, tolower(string))]
   }
-  
+
   # Loop over the filtered list and drop each table
   for (table in filteredTables) {
     DatabaseConnector::renderTranslateExecuteSql(
@@ -42,7 +44,7 @@ dropTablesThatStartWithString <- function(connectionDetails = NULL,
       table_name = table
     )
   }
-  
+
   if (disconnectAfter) {
     DatabaseConnector::disconnect(connection)
   }

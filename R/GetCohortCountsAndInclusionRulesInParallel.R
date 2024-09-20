@@ -21,9 +21,9 @@ getCohortCountsAndInclusionRulesInParallel <-
     if (is.null(cohortTableNames$cohortCensorStatsTable)) {
       stop("'cohortCensorStatsTable' not found in cohortTableNames")
     }
-    
+
     output <- c()
-    
+
     if (!is.null(cohortDefinitionSet)) {
       if (!is.null(cohortIds)) {
         cohortDefinitionSet <- cohortDefinitionSet |>
@@ -31,7 +31,7 @@ getCohortCountsAndInclusionRulesInParallel <-
       }
       inclusionRulesCaptured <- c()
       for (i in (1:nrow(cohortDefinitionSet))) {
-        json <- cohortDefinitionSet[i,]$json
+        json <- cohortDefinitionSet[i, ]$json
         cohortExpression <-
           RJSONIO::fromJSON(content = json, digits = 23)
         inclusionRules <- cohortExpression$InclusionRules
@@ -41,29 +41,34 @@ getCohortCountsAndInclusionRulesInParallel <-
             captureInclusionRules[[j]] <- dplyr::tibble(
               id = j,
               name = as.character(inclusionRules[[j]]$name),
-              description = if (is.null(inclusionRules[[j]]$description))
+              description = if (is.null(inclusionRules[[j]]$description)) {
                 ""
-              else
+              } else {
                 inclusionRules[[j]]$description
+              }
             )
           }
           captureInclusionRules <-
             dplyr::bind_rows(captureInclusionRules) |>
-            dplyr::mutate(cohortId = cohortDefinitionSet[i,]$cohortId) |>
-            dplyr::select(cohortId,
-                            id,
-                            name,
-                            description)
+            dplyr::mutate(cohortId = cohortDefinitionSet[i, ]$cohortId) |>
+            dplyr::select(
+              cohortId,
+              id,
+              name,
+              description
+            )
         }
         inclusionRulesCaptured[[i]] <- captureInclusionRules
       }
       inclusionRulesCaptured <-
         dplyr::bind_rows(inclusionRulesCaptured) |>
-        dplyr::arrange(cohortId,
-                       id)
+        dplyr::arrange(
+          cohortId,
+          id
+        )
       output$cohortInclusion <- inclusionRulesCaptured
     }
-    
+
     writeLines("getting cohort counts")
     output$cohortCounts <-
       getCohortCountsInParallel(
@@ -73,8 +78,8 @@ getCohortCountsAndInclusionRulesInParallel <-
         databaseIds = databaseIds,
         cohortIds = cohortIds
       )$cohortCounts
-    
-    
+
+
     writeLines("getting cohort summary stats")
     output$cohortSummaryStats <-
       getCohortSummaryStatsInParallel(
@@ -84,7 +89,7 @@ getCohortCountsAndInclusionRulesInParallel <-
         databaseIds = databaseIds,
         cohortIds = cohortIds
       )
-    
+
     writeLines("getting cohort inclusion results")
     output$cohortInclusionResultTable <-
       getCohortInclusionResultsInParallel(
@@ -94,7 +99,7 @@ getCohortCountsAndInclusionRulesInParallel <-
         databaseIds = databaseIds,
         cohortIds = cohortIds
       )
-    
+
     writeLines("getting cohort inclusion stats")
     output$cohortInclusionStatsTable <-
       getCohortIncStatsInParallel(
@@ -104,7 +109,7 @@ getCohortCountsAndInclusionRulesInParallel <-
         databaseIds = databaseIds,
         cohortIds = cohortIds
       )
-    
+
     writeLines("getting cohort censor stats")
     output$cohortCensorStatsTable <-
       getCohortCensorStatsInParallel(
@@ -114,6 +119,6 @@ getCohortCountsAndInclusionRulesInParallel <-
         databaseIds = databaseIds,
         cohortIds = cohortIds
       )
-    
+
     return(output)
   }

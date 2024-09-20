@@ -11,22 +11,24 @@ runCohortAlgebraUnionInParallel <- function(cdmSources,
                                             purgeConflicts = TRUE,
                                             ...) {
   cdmSources <-
-    getCdmSource(cdmSources = cdmSources,
-                 database = databaseIds,
-                 sequence = sequence)
-  
+    getCdmSource(
+      cdmSources = cdmSources,
+      database = databaseIds,
+      sequence = sequence
+    )
+
   # Convert the filtered cdmSources to a list for parallel processing
   x <- list()
   for (i in 1:nrow(cdmSources)) {
-    x[[i]] <- cdmSources[i,]
+    x[[i]] <- cdmSources[i, ]
   }
-  
+
   # Initialize a cluster for parallel execution
   cluster <-
     ParallelLogger::makeCluster(numberOfThreads = min(as.integer(trunc(
       parallel::detectCores() / 2
     )), length(x)))
-  
+
   # Inner function to render and translate SQL for each CDM source
   unionCohortsX <-
     function(x,
@@ -46,18 +48,18 @@ runCohortAlgebraUnionInParallel <- function(cdmSources,
         )
       connection <-
         DatabaseConnector::connect(connectionDetails = connectionDetails)
-      
+
       CohortAlgebra::unionCohorts(
         connection = connection,
         sourceCohortDatabaseSchema = x$cohortDatabaseSchema,
         targetCohortDatabaseSchema = x$cohortDatabaseSchema,
         sourceCohortTable = sourceCohortTable,
         targetCohortTable = targetCohortTable,
-        oldToNewCohortId = oldToNewCohortId, 
+        oldToNewCohortId = oldToNewCohortId,
         purgeConflicts = purgeConflicts
       )
     }
-  
+
   # Apply the function in parallel across the cluster
   ParallelLogger::clusterApply(
     cluster = cluster,

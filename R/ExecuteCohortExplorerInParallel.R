@@ -12,22 +12,24 @@ executeCohortExplorerInParallel <-
            sampleSize = 100,
            cohortIds = NULL) {
     cdmSources <-
-      getCdmSource(cdmSources = cdmSources,
-                   database = databaseIds,
-                   sequence = sequence)
-    
+      getCdmSource(
+        cdmSources = cdmSources,
+        database = databaseIds,
+        sequence = sequence
+      )
+
     x <- list()
     for (i in 1:nrow(cdmSources)) {
       x[[i]] <- cdmSources[i, ]
     }
-    
+
     # use Parallel Logger to run in parallel
     cluster <-
       ParallelLogger::makeCluster(numberOfThreads = min(as.integer(trunc(
         parallel::detectCores() /
           2
       )), length(x)))
-    
+
     ## file logger
     loggerName <-
       paste0(
@@ -38,9 +40,9 @@ executeCohortExplorerInParallel <-
           replacement = ""
         )
       )
-    
+
     ParallelLogger::addDefaultFileLogger(fileName = file.path(outputFolder, paste0(loggerName, ".txt")))
-    
+
     executeCohortExplorerX <- function(x,
                                        cohortDefinitionSet,
                                        cohortIds,
@@ -50,14 +52,14 @@ executeCohortExplorerInParallel <-
                                        tempEmulationSchema) {
       connectionDetails <- createConnectionDetails()
       connection <- DatabaseConnector::connect(connectionDetails = connectionDetails)
-      
+
       featureCohortDefinitionSet <- cohortDefinitionSet
-      
+
       if (!is.null(cohortIds)) {
         cohortDefinitionSet <- cohortDefinitionSet |>
           dplyr::filter(.data$cohortId %in% cohortIds)
       }
-      
+
       for (i in (1:nrow(cohortDefinitionSet))) {
         CohortExplorer::createCohortExplorerApp(
           cohortDefinitionId = cohortDefinitionSet[i, ]$cohortId,
@@ -77,10 +79,10 @@ executeCohortExplorerInParallel <-
           featureCohortDefinitionSet = featureCohortDefinitionSet
         )
       }
-      
+
       DatabaseConnector::dropEmulatedTempTables(connection = connection, tempEmulationSchema = tempEmulationSchema)
     }
-    
+
     ParallelLogger::clusterApply(
       cluster = cluster,
       x = x,
@@ -93,6 +95,6 @@ executeCohortExplorerInParallel <-
       fun = executeCohortExplorerX,
       stopOnError = FALSE
     )
-    
+
     ParallelLogger::stopCluster(cluster = cluster)
   }
