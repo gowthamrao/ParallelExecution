@@ -44,6 +44,7 @@ executeCohortGeneration <- function(connectionDetails,
                                     tempEmulationSchema = getOption("sqlRenderTempEmulationSchema"),
                                     outputFolder,
                                     databaseId,
+                                    minCellCount = 5,
                                     createCohortTableIncremental = TRUE,
                                     generateCohortIncremental = TRUE,
                                     incrementalFolder = file.path(outputFolder, "incrementalFolder"),
@@ -91,55 +92,127 @@ executeCohortGeneration <- function(connectionDetails,
     stopOnError = FALSE,
     incremental = generateCohortIncremental
   )
+  browser()
   
+  dir.create(
+    file.path(outputFolder, "CohortStatistics"),
+    showWarnings = FALSE,
+    recursive = TRUE
+  )
   # export stats table to local
   CohortGenerator::exportCohortStatsTables(
-    connectionDetails = connectionDetails,
-    connection = NULL,
-    cohortDatabaseSchema = cohortDatabaseSchema,
-    cohortTableNames = cohortTableNames,
-    cohortStatisticsFolder = outputFolder,
-    incremental = generateCohortIncremental
-  )
-  
-  cohortStatsTables <- getCohortStatsFix(
-    connectionDetails = connectionDetails,
-    connection = NULL,
-    databaseId = databaseId,
-    cohortDatabaseSchema = cohortDatabaseSchema,
-    snakeCaseToCamelCase = TRUE,
-    cohortTableNames = cohortTableNames,
-  )
-  
-  dropTempTablesFromScratchDataBricks(
+    connectionDetails = NULL,
     connection = connection,
-    schema = "scratch.scratch_grao9",
-    string = "epi",
-    exclude = TRUE
+    cohortDatabaseSchema = cohortDatabaseSchema,
+    cohortTableNames = cohortTableNames,
+    cohortStatisticsFolder = file.path(outputFolder, "CohortStatistics"),
+    incremental = generateCohortIncremental,
+    cohortDefinitionSet = cohortDefinitionSet,
+    snakeCaseToCamelCase = TRUE,
+    databaseId = databaseId,
+    minCellCount = minCellCount
   )
+  
+  output <- c()
+  if (!is.null(cohortTableNames$cohortInclusionTable)) {
+    output$cohortInclusionTable <- DatabaseConnector::renderTranslateQuerySql(
+      connection = connection,
+      sql = "SELECT * FROM @cohort_database_schema.@table_name;",
+      cohort_database_schema = cohortDatabaseSchema,
+      table_name = cohortTableNames$cohortInclusionTable,
+      snakeCaseToCamelCase = TRUE,
+      tempEmulationSchema = tempEmulationSchema
+    ) |>
+      dplyr::tibble() |>
+      dplyr::filter(cohortDefinitionId %in% cohortDefinitionSet$cohortId) |> 
+      dplyr::mutate(databaseId == !!databaseId)
+  }
+  
+  if (!is.null(cohortTableNames$cohortInclusionResultTable)) {
+    output$cohortInclusionResultTable <- DatabaseConnector::renderTranslateQuerySql(
+      connection = connection,
+      sql = "SELECT * FROM @cohort_database_schema.@table_name;",
+      cohort_database_schema = cohortDatabaseSchema,
+      table_name = cohortTableNames$cohortInclusionResultTable,
+      snakeCaseToCamelCase = TRUE,
+      tempEmulationSchema = tempEmulationSchema
+    ) |>
+      dplyr::tibble() |>
+      dplyr::filter(cohortDefinitionId %in% cohortDefinitionSet$cohortId) |> 
+      dplyr::mutate(databaseId == !!databaseId)
+  }
+  
+  if (!is.null(cohortTableNames$cohortInclusionStatsTable)) {
+    output$cohortInclusionStatsTable <- DatabaseConnector::renderTranslateQuerySql(
+      connection = connection,
+      sql = "SELECT * FROM @cohort_database_schema.@table_name;",
+      cohort_database_schema = cohortDatabaseSchema,
+      table_name = cohortTableNames$cohortInclusionStatsTable,
+      snakeCaseToCamelCase = TRUE,
+      tempEmulationSchema = tempEmulationSchema
+    ) |>
+      dplyr::tibble() |>
+      dplyr::filter(cohortDefinitionId %in% cohortDefinitionSet$cohortId) |> 
+      dplyr::mutate(databaseId == !!databaseId)
+  }
+  
+  if (!is.null(cohortTableNames$cohortSummaryStatsTable)) {
+    output$cohortSummaryStatsTable <- DatabaseConnector::renderTranslateQuerySql(
+      connection = connection,
+      sql = "SELECT * FROM @cohort_database_schema.@table_name;",
+      cohort_database_schema = cohortDatabaseSchema,
+      table_name = cohortTableNames$cohortSummaryStatsTable,
+      snakeCaseToCamelCase = TRUE,
+      tempEmulationSchema = tempEmulationSchema
+    ) |>
+      dplyr::tibble() |>
+      dplyr::filter(cohortDefinitionId %in% cohortDefinitionSet$cohortId) |> 
+      dplyr::mutate(databaseId == !!databaseId)
+  }
+  
+  if (!is.null(cohortTableNames$cohortCensorStatsTable)) {
+    output$cohortCensorStatsTable <- DatabaseConnector::renderTranslateQuerySql(
+      connection = connection,
+      sql = "SELECT * FROM @cohort_database_schema.@table_name;",
+      cohort_database_schema = cohortDatabaseSchema,
+      table_name = cohortTableNames$cohortCensorStatsTable,
+      snakeCaseToCamelCase = TRUE,
+      tempEmulationSchema = tempEmulationSchema
+    ) |>
+      dplyr::tibble() |>
+      dplyr::filter(cohortDefinitionId %in% cohortDefinitionSet$cohortId) |> 
+      dplyr::mutate(databaseId == !!databaseId)
+  }
+  
+  output$cohortCount <- CohortGenerator::getCohortCounts(
+    connectionDetails = NULL,
+    connection = connection,
+    cohortDatabaseSchema = cohortDatabaseSchema,
+    cohortTable = cohortTableNames$cohortTable,
+    cohortDefinitionSet = cohortDefinitionSet,
+    databaseId = databaseId,
+    cohortIds = cohortDefinitionSet$cohortId
+  ) |>
+    dplyr::tibble() |>
+    dplyr::select(databaseId,
+                  cohortId,
+                  cohortName,
+                  cohortEntries,
+                  cohortSubjects)
+  
+  DatabaseConnector::dropEmulatedTempTables(connection = connection)
   
   DatabaseConnector::disconnect(connection)
   
   readr::write_excel_csv(
-    x = cohortCount |>
+    x = output$cohortCount |>
       dplyr::select(.data$cohortId, .data$cohortEntries, .data$cohortSubjects) |>
       dplyr::arrange(.data$cohortId),
-    file = file.path(outputFolder, "cohortCount.csv"),
+    file = file.path(outputFolder, "CohortStatistics", "cohortCount.csv"),
     na = "",
     append = FALSE,
     progress = FALSE
   )
-  
-  output <- c()
-  output$cohortCount <- cohortCount
-  output$cohortInclusionTable <- cohortStatsTables$cohortInclusionTable
-  output$cohortInclusionResultTable <- cohortStatsTables$cohortInclusionResultTable
-  output$cohortInclusionStatsTable <- cohortStatsTables$cohortInclusionStatsTable
-  output$cohortSummaryStatsTable <- cohortStatsTables$cohortSummaryStatsTable
-  output$cohortSummaryStatsTable <- cohortStatsTables$cohortSummaryStatsTable
-  
-  saveRDS(object = output,
-          file = file.path(outputFolder, "CohortGenerator.RDS"))
   return(output)
 }
 
@@ -155,7 +228,8 @@ executeCohortGenerationInParallel <- function(cdmSources,
                                               sequence = 1,
                                               createCohortTableIncremental = TRUE,
                                               generateCohortIncremental = TRUE,
-                                              cohortIds = NULL) {
+                                              cohortIds = NULL,
+                                              minCellCount = 5) {
   dir.create(path = outputFolder,
              showWarnings = FALSE,
              recursive = TRUE)
@@ -197,7 +271,8 @@ executeCohortGenerationInParallel <- function(cdmSources,
                                        outputFolder,
                                        tempEmulationSchema,
                                        createCohortTableIncremental,
-                                       generateCohortIncremental) {
+                                       generateCohortIncremental,
+                                       minCellCount) {
     connectionDetails <- createConnectionDetails()
     
     cohortTableName <- paste0(cohortTableBaseName,
@@ -217,7 +292,8 @@ executeCohortGenerationInParallel <- function(cdmSources,
       outputFolder = file.path(outputFolder, x$sourceKey),
       cohortIds = cohortIds,
       createCohortTableIncremental = createCohortTableIncremental,
-      generateCohortIncremental = generateCohortIncremental
+      generateCohortIncremental = generateCohortIncremental,
+      minCellCount = minCellCount
     )
   }
   
@@ -231,6 +307,7 @@ executeCohortGenerationInParallel <- function(cdmSources,
     tempEmulationSchema = tempEmulationSchema,
     createCohortTableIncremental = createCohortTableIncremental,
     generateCohortIncremental = generateCohortIncremental,
+    minCellCount = minCellCount,
     fun = executeCohortGenerationX
   )
   

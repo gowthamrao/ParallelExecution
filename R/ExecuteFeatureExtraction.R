@@ -306,7 +306,7 @@ executeFeatureExtractionInParallel <-
                rowIdField,
                aggregated,
                incremental) {
-        connectionDetails <- createConnectionDetails(cdmSources = x, database = x$database)
+        connectionDetails <- createConnectionDetails()
 
         outputFolder <-
           file.path(outputFolder, x$sourceKey)

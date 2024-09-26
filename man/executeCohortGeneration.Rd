@@ -13,6 +13,7 @@ executeCohortGeneration(
   tempEmulationSchema = getOption("sqlRenderTempEmulationSchema"),
   outputFolder,
   databaseId,
+  minCellCount = 5,
   createCohortTableIncremental = TRUE,
   generateCohortIncremental = TRUE,
   incrementalFolder = file.path(outputFolder, "incrementalFolder"),

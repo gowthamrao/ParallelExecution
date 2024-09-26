@@ -43,7 +43,7 @@ renderTranslateExecuteSqlInParallel <- function(cdmSources,
   renderTranslateExecuteSqlX <-
     function(x, sql, tempEmulationSchema, ...) {
       # Create connection details for each CDM source
-      connectionDetails <- createConnectionDetails(cdmSources = x, database = x$database)
+      connectionDetails <- createConnectionDetails()
 
       connection <-
         DatabaseConnector::connect(connectionDetails = connectionDetails)
