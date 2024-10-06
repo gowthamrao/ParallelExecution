@@ -92,7 +92,6 @@ executeCohortGeneration <- function(connectionDetails,
     stopOnError = FALSE,
     incremental = generateCohortIncremental
   )
-  browser()
   
   dir.create(
     file.path(outputFolder, "CohortStatistics"),
