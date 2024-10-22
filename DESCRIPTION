@@ -14,6 +14,7 @@ Depends:
 	R (>= 4.1.0)
 Imports:
     checkmate,
+    CohortResults,
     dplyr,
     lifecycle,
     ParallelLogger,
@@ -21,16 +22,14 @@ Imports:
 Suggests:
   Eunomia,
   remotes,
-  rmarkdown,
-  knitr,
 	testthat,
 	withr
 Remotes:
+  gowthamrao/CohortResults,
   ohdsi/Eunomia,
   ohdsi/ParallelLogger
 License: Apache License
 RoxygenNote: 7.3.2
-VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)
 Encoding: UTF-8
 Language: en-US

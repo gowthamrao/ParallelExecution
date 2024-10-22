@@ -13,11 +13,6 @@ getCohortCountsInParallel <- function(cdmSources = NULL,
   connectionDetails <- ParallelExecution::createConnectionDetails()
   connection <- DatabaseConnector::connect(connectionDetails)
   
-  outputFolder <- tempfile()
-  dir.create(outputFolder,
-             showWarnings = FALSE,
-             recursive = TRUE)
-  
   cohortCounts <- c()
   inclusion <- c()
   inclusionResult <- c()
@@ -29,64 +24,20 @@ getCohortCountsInParallel <- function(cdmSources = NULL,
     sourceKey <- cdmSources[i, ]$sourceKey
     cohortTableNames <- CohortGenerator::getCohortTableNames(cohortTable = paste0(cohortTableBaseName, "_", cdmSources[i, ]$sourceKey))
     
-    cohortCounts[[i]] <- CohortGenerator::getCohortCounts(
+    result <- CohortResults::getCohortInclusionRules(
       connection = connection,
       cohortDatabaseSchema = cdmSources[i, ]$cohortDatabaseSchema,
-      cohortTable = cohortTableNames$cohortTable,
+      cohortTableNames = cohortTableNames,
       cohortIds = cohortDefinitionSet$cohortId
     ) |>
-      dplyr::mutate(databaseId = sourceKey) |>
-      dplyr::tibble()
+      dplyr::mutate(databaseId = sourceKey)
     
-    inclusion[[i]] <- DatabaseConnector::renderTranslateQuerySql(
-      connection = connection,
-      sql = "SELECT * FROM @cohort_database_schema.@stat_table WHERE cohort_definition_id IN (@cohort_ids);",
-      snakeCaseToCamelCase = TRUE,
-      tempEmulationSchema = tempEmulationSchema,
-      cohort_database_schema = cdmSources[i, ]$cohortDatabaseSchema,
-      stat_table = cohortTableNames$cohortInclusionTable,
-      cohort_ids = cohortDefinitionSet$cohortId
-    ) |> dplyr::tibble()
-    
-    inclusionResult[[i]] <- DatabaseConnector::renderTranslateQuerySql(
-      connection = connection,
-      sql = "SELECT * FROM @cohort_database_schema.@stat_table WHERE cohort_definition_id IN (@cohort_ids);",
-      snakeCaseToCamelCase = TRUE,
-      tempEmulationSchema = tempEmulationSchema,
-      cohort_database_schema = cdmSources[i, ]$cohortDatabaseSchema,
-      stat_table = cohortTableNames$cohortInclusionResultTable,
-      cohort_ids = cohortDefinitionSet$cohortId
-    ) |> dplyr::tibble()
-    
-    inclusionStats[[i]] <- DatabaseConnector::renderTranslateQuerySql(
-      connection = connection,
-      sql = "SELECT * FROM @cohort_database_schema.@stat_table WHERE cohort_definition_id IN (@cohort_ids);",
-      snakeCaseToCamelCase = TRUE,
-      tempEmulationSchema = tempEmulationSchema,
-      cohort_database_schema = cdmSources[i, ]$cohortDatabaseSchema,
-      stat_table = cohortTableNames$cohortInclusionStatsTable,
-      cohort_ids = cohortDefinitionSet$cohortId
-    ) |> dplyr::tibble()
-    
-    summaryStats[[i]] <- DatabaseConnector::renderTranslateQuerySql(
-      connection = connection,
-      sql = "SELECT * FROM @cohort_database_schema.@stat_table WHERE cohort_definition_id IN (@cohort_ids);",
-      snakeCaseToCamelCase = TRUE,
-      tempEmulationSchema = tempEmulationSchema,
-      cohort_database_schema = cdmSources[i, ]$cohortDatabaseSchema,
-      stat_table = cohortTableNames$cohortSummaryStatsTable,
-      cohort_ids = cohortDefinitionSet$cohortId
-    ) |> dplyr::tibble()
-    
-    censorStats[[i]] <- DatabaseConnector::renderTranslateQuerySql(
-      connection = connection,
-      sql = "SELECT * FROM @cohort_database_schema.@stat_table WHERE cohort_definition_id IN (@cohort_ids);",
-      snakeCaseToCamelCase = TRUE,
-      tempEmulationSchema = tempEmulationSchema,
-      cohort_database_schema = cdmSources[i, ]$cohortDatabaseSchema,
-      stat_table = cohortTableNames$cohortCensorStatsTable,
-      cohort_ids = cohortDefinitionSet$cohortId
-    ) |> dplyr::tibble()
+    cohortCounts[[i]] <- result$cohortCount
+    inclusion[[i]] <- result$inclusion
+    inclusionResult[[i]] <- result$inclusionResult
+    inclusionStats[[i]] <- result$inclusionStats
+    summaryStats[[i]] <- result$summaryStats
+    censorStats[[i]] <- result$censorStats
   }
   
   results <- c()
